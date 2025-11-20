@@ -3,7 +3,6 @@
 Description=NetBox IPAM/DCIM Tool
 Documentation=http://netbox.readthedocs.io/en/{{ 'latest' if netbox_git else 'stable' }}/
 Requires=netbox.socket
-After=syslog.target
 
 [Service]
 ExecStart={{ netbox_uwsgi_cmd }} --ini {{ netbox_shared_path }}/uwsgi.ini
@@ -18,7 +17,6 @@ Restart=on-failure
 SuccessExitStatus=15 17 29 30
 KillSignal=SIGQUIT
 Type=notify
-StandardError=syslog
 NotifyAccess=all
 PrivateTmp=yes
 ProtectSystem=full
