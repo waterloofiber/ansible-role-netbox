@@ -2,6 +2,10 @@
 import json
 import os
 
+{% if netbox_branching %}
+from netbox_branching.utilities import DynamicSchemaDict
+{% endif %}
+
 {% if netbox_metrics_enabled %}
 if "prometheus_multiproc_dir" in os.environ:
     try:
@@ -14,33 +18,49 @@ if "prometheus_multiproc_dir" in os.environ:
         pass  # not running in uwsgi
 {% endif %}
 
-DATABASE = {
-    'NAME': '{{ netbox_database }}',
-    'USER': '{{ netbox_database_user }}',
-{% if netbox_database_host is defined %}
-    'PASSWORD': '{{ netbox_database_password }}',
-    'HOST':  '{{ netbox_database_host }}',
-    'PORT': '{{ netbox_database_port }}',
+{% if netbox_branching %}
+DATABASES = DynamicSchemaDict({
 {% else %}
+DATABASES = {
+{% endif %}
+    'default': {
+        'NAME': '{{ netbox_database }}',
+        'USER': '{{ netbox_database_user }}',
+{%      if netbox_database_host is defined %}
+        'PASSWORD': '{{ netbox_database_password }}',
+        'HOST':  '{{ netbox_database_host }}',
+        'PORT': '{{ netbox_database_port }}',
+{%      else %}
 {%      if netbox_database_password is defined %}
-    'PASSWORD': '{{ netbox_database_password }}',
+        'PASSWORD': '{{ netbox_database_password }}',
 {%      endif %}
-{% if netbox_database_alt_socket and netbox_database_socket is defined %}
-    'PORT': '{{ netbox_database_port }}',
-{% endif %}
-    'HOST': '{{ netbox_database_socket }}',
-{% endif %}
-    'CONN_MAX_AGE': {{ netbox_database_conn_age }},
-{% if netbox_database_options|length > 0 %}
-    'OPTIONS': {
-        {% for setting, value in netbox_database_options.items() %}
-        {% if value is string or value is number %}
-        "{{ setting }}": {{ value | to_nice_json }},
-        {% endif %}
-        {% endfor %}
-    },
-{% endif %}
+{%      if netbox_database_alt_socket and netbox_database_socket is defined %}
+        'PORT': '{{ netbox_database_port }}',
+{%      endif %}
+        'HOST': '{{ netbox_database_socket }}',
+{%      endif %}
+        'CONN_MAX_AGE': {{ netbox_database_conn_age }},
+{%      if netbox_database_options|length > 0 %}
+        'OPTIONS': {
+{%          for setting, value in netbox_database_options.items() %}
+{%          if value is string or value is number %}
+            "{{ setting }}": {{ value | to_nice_json }},
+{%          endif %}
+{%          endfor %}
+        },
+{%      endif %}
+    }
+{% if netbox_branching %}
+})
+{% else %}
 }
+{% endif %}
+
+{% if netbox_branching %}
+DATABASE_ROUTERS = [
+    "netbox_branching.database.BranchAwareRouter",
+]
+{% endif %}
 
 {% if netbox_stable and netbox_stable_version is version('2.9.4', '>=') or
       netbox_git and _netbox_git_contains_rq_timeout.rc == 0 %}

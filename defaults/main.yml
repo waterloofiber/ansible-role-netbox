@@ -52,6 +52,7 @@ netbox_metrics_dir: netbox_metrics
 netbox_metrics_path: "/run/{{ netbox_metrics_dir }}"
 
 netbox_config: {}
+netbox_branching: false
 
 netbox_scripts: []
 netbox_reports: []
